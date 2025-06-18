@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MetaXtract{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --accent-blue: #0099ff;
+            --accent-light: #66c7ff;
+            --accent-dark: #0066cc;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --card-bg-darker: #181818;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            
+            /* Maintaining aliases for compatibility */
+            --primary-color: var(--accent-blue);
+            --secondary-color: var(--accent-dark);
+            --tertiary-color: var(--accent-light);
+            --darker-bg: var(--card-bg-darker);
+            --light-bg: var(--card-bg);
+            --light-text: var(--text-primary);
+            --mid-text: var(--text-secondary);
+            --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            --btn-hover: #007fd6;
+            --danger-color: #ff3a5e;
+            --danger-hover: #e01a3f;
+            --success-color: #0acf83;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --section-bg: #171717;
+            --accent-color: var(--accent-blue);
+            --accent-hover: var(--accent-dark);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background-color: var(--card-bg) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .navbar-brand, .nav-link {
+            color: var(--text-primary) !important;
+            font-weight: 500;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, var(--accent-blue), var(--accent-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent !important;
+        }
+        
+        .nav-link {
+            margin: 0 8px;
+            padding: 8px 16px !important;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-blue) !important;
+            background-color: rgba(0, 153, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            color: var(--accent-blue) !important;
+            background-color: rgba(0, 153, 255, 0.15);
+            font-weight: 600;
+        }
+        
+        .navbar-toggler {
+            border-color: var(--border-color);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .navbar-toggler-icon {
+            filter: invert(1);
+        }
+        
+        main {
+            flex: 1;
+        }
+        
+        .card, .metadata-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover, .metadata-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            border-color: rgba(0, 153, 255, 0.2);
+        }
+        
+        .card-header {
+            background-color: var(--card-bg-darker);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 24px;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header i {
+            margin-right: 12px;
+            color: var(--accent-blue);
+        }
+        
+        .card-body {
+            color: var(--text-primary);
+            padding: 24px;
+        }
+        
+        .btn {
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: 10px;
+        }
+        
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-dark));
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background: linear-gradient(135deg, var(--accent-light), var(--accent-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 153, 255, 0.3);
+        }
+        
+        .btn-accent {
+            background-color: rgba(0, 153, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid rgba(0, 153, 255, 0.3);
+        }
+        
+        .btn-accent:hover {
+            background-color: rgba(0, 153, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 153, 255, 0.2);
+        }
+        
+        .btn-danger {
+            background-color: rgba(255, 58, 94, 0.2);
+            color: var(--danger-color);
+            border: 1px solid rgba(255, 58, 94, 0.3);
+        }
+        
+        .btn-danger:hover, .btn-danger:focus {
+            background-color: rgba(255, 58, 94, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(255, 58, 94, 0.2);
+        }
+        
+        .btn-success {
+            background-color: rgba(10, 207, 131, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(10, 207, 131, 0.3);
+        }
+        
+        .btn-success:hover, .btn-success:focus {
+            background-color: rgba(10, 207, 131, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(10, 207, 131, 0.2);
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-blue);
+            border: 1px solid rgba(0, 153, 255, 0.4);
+            background-color: transparent;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: rgba(0, 153, 255, 0.1);
+            color: var(--accent-light);
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--text-secondary);
+            border: 1px solid rgba(176, 176, 176, 0.3);
+            background-color: transparent;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: rgba(176, 176, 176, 0.1);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-light {
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: transparent;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-light {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-light:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .file-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            color: var(--accent-blue);
+        }
+        
+        .json-viewer {
+            background-color: var(--card-bg-darker);
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            color: #e4ebfa;
+            border: 1px solid var(--border-color);
+        }
+        
+        .footer {
+            margin-top: 80px;
+            padding: 50px 0 30px;
+            background-color: var(--card-bg-darker);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .footer h5 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .footer a:hover {
+            color: var(--accent-blue);
+            transform: translateX(5px);
+        }
+        
+        .footer p {
+            color: var(--text-secondary);
+        }
+        
+        .footer .social-links a {
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #001e3c 0%, #003366 100%);
+            padding: 100px 0 120px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(0, 153, 255, 0.1);
+            z-index: 0;
+        }
+        
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: -80px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(0, 153, 255, 0.1);
+            z-index: 0;
+        }
+        
+        .hero-section h1 {
+            font-weight: 800;
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff, var(--accent-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero-section p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .hero-section .btn {
+            padding: 14px 32px;
+            font-weight: 600;
+        }
+        
+        .drag-area {
+            border: 2px dashed rgba(0, 153, 255, 0.3);
+            height: 300px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin: 20px 0;
+            background-color: rgba(0, 153, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+        
+        .drag-area.active {
+            border: 2px solid var(--accent-blue);
+            background-color: rgba(0, 153, 255, 0.08);
+        }
+        
+        .drag-area .icon {
+            font-size: 70px;
+            color: var(--accent-blue);
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+        
+        .drag-area header {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+        
+        .drag-area span {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin: 10px 0 20px;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-success {
+            background-color: rgba(10, 207, 131, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(10, 207, 131, 0.2);
+        }
+        
+        .alert-danger {
+            background-color: rgba(255, 58, 94, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(255, 58, 94, 0.2);
+        }
+        
+        .list-group-item {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        pre, code {
+            background-color: var(--card-bg-darker);
+            color: #e4ebfa;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Dark scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--card-bg-darker);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 153, 255, 0.3);
+        }
+        
+        /* Animation for cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated-card {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Animation for cards */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animated-card {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        /* Feature Section Styling */
+        .feature-card {
+            border-radius: 16px;
+            padding: 30px;
+            height: 100%;
+            background-color: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: rgba(0, 153, 255, 0.2);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 32px;
+            background-color: rgba(0, 153, 255, 0.1);
+        }
+        
+        .feature-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        
+        .feature-description {
+            color: var(--text-secondary);
+        }
+        
+        /* Table Styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+            color: var(--text-primary);
+        }
+        
+        .table thead th {
+            background-color: var(--card-bg-darker);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        
+        .table tbody td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            color: var(--text-primary);
+        }
+        
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(0, 153, 255, 0.05);
+        }
+        
+        /* Text colors */
+        .text-primary {
+            color: var(--accent-blue) !important;
+        }
+        
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+        
+        .text-light {
+            color: var(--text-primary) !important;
+        }
+        
+        .text-mid-text {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 0.35em 0.65em;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .badge-primary {
+            background-color: rgba(0, 153, 255, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(0, 153, 255, 0.2);
+        }
+        
+        .badge-success {
+            background-color: rgba(10, 207, 131, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(10, 207, 131, 0.2);
+        }
+        
+        .badge-danger {
+            background-color: rgba(255, 58, 94, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(255, 58, 94, 0.2);
+        }
+        
+        /* Modal styling */
+        .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 24px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 20px 24px;
+        }
+        
+        .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-shield-alt me-2"></i>
+                <span style="font-weight: 600;">Meta</span>Xtract
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('main.index') }}">
+                            <i class="fas fa-home me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('main.upload_file') }}">
+                            <i class="fas fa-upload me-1"></i> Upload
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('main.file_list') }}">
+                            <i class="fas fa-file-alt me-1"></i> Files
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('main.about') }}">
+                            <i class="fas fa-info-circle me-1"></i> About
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {% if category == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% elif category == 'error' or category == 'danger' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif category == 'info' %}
+                            <i class="fas fa-info-circle me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-shield-alt me-2"></i> MetaXtract Analyzer</h5>
+                    <p class="text-secondary">A powerful tool to extract and analyze metadata from various file formats.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}"><i class="fas fa-chevron-right me-1"></i> Dashboard</a></li>
+                        <li><a href="{{ url_for('main.upload_file') }}"><i class="fas fa-chevron-right me-1"></i> Upload</a></li>
+                        <li><a href="{{ url_for('main.file_list') }}"><i class="fas fa-chevron-right me-1"></i> Files</a></li>
+                        <li><a href="{{ url_for('main.about') }}"><i class="fas fa-chevron-right me-1"></i> About</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>API</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/api/files"><i class="fas fa-code me-1"></i> Files API</a></li>
+                        <li><a href="/api/extract"><i class="fas fa-code me-1"></i> Extract API</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4" style="border-color: rgba(255,255,255,0.1);">
+            <div class="text-center">
+                <p class="text-secondary">&copy; 2023 MetaXtract Analyzer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    
+    <script>
+        // Add animation class to cards on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card, .metadata-card');
+            cards.forEach((card, index) => {
+                card.classList.add('animated-card');
+                card.style.animationDelay = (index * 0.1) + 's';
+            });
+            
+            // Set active nav link
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (currentPath === linkPath || 
+                    (linkPath !== '/' && currentPath.startsWith(linkPath))) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

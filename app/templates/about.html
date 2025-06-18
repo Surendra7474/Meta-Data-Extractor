@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}About - MetaXtract{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Table styling for API documentation */
+    .table {
+        color: var(--text-primary) !important;
+        background-color: transparent !important;
+    }
+
+    .table thead th {
+        color: var(--text-secondary) !important;
+        border-color: var(--border-color) !important;
+        background-color: var(--card-bg-darker) !important;
+        padding: 12px 16px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .table th,
+    .table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+        padding: 12px 16px;
+    }
+
+    .badge {
+        padding: 0.4em 0.6em;
+        font-weight: 500;
+        border-radius: 6px;
+        font-size: 0.75rem;
+    }
+
+    .badge-primary {
+        background-color: rgba(0, 153, 255, 0.15);
+        color: var(--accent-blue);
+    }
+
+    /* Custom scrollbar for the file list */
+    .files-table-container {
+        max-height: 500px;
+        overflow-y: auto;
+        border-radius: 16px;
+        position: relative;
+    }
+
+    .files-table-container thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .files-table-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .files-table-container::-webkit-scrollbar-track {
+        background: var(--card-bg-darker);
+        border-radius: 4px;
+    }
+
+    .files-table-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 153, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    .files-table-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 153, 255, 0.4);
+    }
+
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 18px;
+        margin-right: 15px;
+        transition: all 0.3s ease;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .file-row:hover .file-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .file-row {
+        transition: all 0.2s ease;
+    }
+
+    .file-row:hover {
+        background-color: rgba(0, 153, 255, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">About MetaXtract</h1>
+            <p class="lead">A powerful tool for extracting and analyzing metadata from various file types.</p>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">Overview</h2>
+                    <p>MetaXtract is a Flask-based web application designed to extract metadata from various file types. Whether you're working with images, documents, spreadsheets, audio, or video files, this tool provides valuable insights into the characteristics and properties of your files.</p>
+
+                    <p>Our application uses specialized extractors for different file types to ensure the most comprehensive metadata extraction possible:</p>
+
+                    <ul>
+                        <li><strong>Images:</strong> Extract EXIF data, dimensions, format, and other metadata.</li>
+                        <li><strong>PDFs:</strong> Extract document properties, author information, creation date, and page count.</li>
+                        <li><strong>Documents (DOCX, DOC):</strong> Extract author, creation date, revision information, and content preview.</li>
+                        <li><strong>Spreadsheets (XLSX, XLS, CSV):</strong> Extract sheet information, dimensions, and document properties.</li>
+                        <li><strong>Text Files:</strong> Extract line count, word count, character count, and content preview.</li>
+                    </ul>
+
+                    <p>The extracted metadata is presented in a structured format and can be accessed through both the web interface and API.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                    <h3 class="card-title">Features</h3>
+                    <ul class="list-group list-group-flush text-start">
+                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i> Extract metadata from multiple file types</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i> Store and manage uploaded files</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i> Visual representation of metadata</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i> RESTful API for integration</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success me-2"></i> Search and filter capabilities</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5" id="api">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">API Documentation</h2>
+                </div>
+                <div class="card-body">
+                    <p>MetaXtract provides a RESTful API for programmatic access to its features. The API allows you to extract metadata from files, retrieve stored metadata, and manage uploaded files.</p>
+
+                    <h4 class="mt-4">Endpoints</h4>
+
+                    <div class="card">
+                        <div class="table-responsive files-table-container">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ENDPOINT</th>
+                                        <th>METHOD</th>
+                                        <th>DESCRIPTION</th>
+                                        <th>PARAMETERS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/extract</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">POST</span>
+                                        </td>
+                                        <td class="align-middle">Extract metadata from a file</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file</code> (required): File to upload</li>
+                                                <li><code>store</code> (optional): Whether to store the file and metadata (true/false)</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">GET</span>
+                                        </td>
+                                        <td class="align-middle">Get a list of all files with extracted metadata</td>
+                                        <td class="align-middle">None</td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files/{file_id}</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">GET</span>
+                                        </td>
+                                        <td class="align-middle">Get metadata for a specific file</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file_id</code> (required): ID of the file</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(255, 58, 94, 0.1); color: var(--danger-color);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files/{file_id}</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge" style="background-color: rgba(255, 58, 94, 0.15); color: var(--danger-color);">DELETE</span>
+                                        </td>
+                                        <td class="align-middle">Delete a file and its metadata</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file_id</code> (required): ID of the file</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files/{file_id}/analyze</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">POST</span>
+                                        </td>
+                                        <td class="align-middle">Analyze metadata using Gemini AI</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file_id</code> (required): ID of the file</li>
+                                                <li><code>force</code> (optional): Force reanalysis if analysis already exists (true/false)</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files/{file_id}/report</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">GET</span>
+                                        </td>
+                                        <td class="align-middle">Generate an HTML report for a file</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file_id</code> (required): ID of the file</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="file-row">
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <div class="file-icon" style="background-color: rgba(0, 153, 255, 0.1); color: var(--accent-blue);">
+                                                    <i class="fas fa-code"></i>
+                                                </div>
+                                                <div>
+                                                    <code>/api/files/{file_id}/clean-metadata</code>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-primary">POST</span>
+                                        </td>
+                                        <td class="align-middle">Remove all metadata from a file</td>
+                                        <td class="align-middle">
+                                            <ul class="mb-0">
+                                                <li><code>file_id</code> (required): ID of the file</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-4">Example: Extract Metadata</h4>
+
+                    <pre class="p-3 rounded" style="background-color: var(--card-bg-darker); border: 1px solid var(--border-color); color: #e4ebfa;"><code>curl -X POST -F "file=@path/to/your/file.jpg" -F "store=true" http://localhost:5000/api/extract</code></pre>
+
+                    <h4 class="mt-4">Example: Get File Metadata</h4>
+
+                    <pre class="p-3 rounded" style="background-color: var(--card-bg-darker); border: 1px solid var(--border-color); color: #e4ebfa;"><code>curl -X GET http://localhost:5000/api/files/1</code></pre>
+
+                    <h4 class="mt-4">Example: Analyze File Metadata</h4>
+
+                    <pre class="p-3 rounded" style="background-color: var(--card-bg-darker); border: 1px solid var(--border-color); color: #e4ebfa;"><code>curl -X POST http://localhost:5000/api/files/1/analyze</code></pre>
+
+                    <h4 class="mt-4">Example: Generate Report</h4>
+
+                    <pre class="p-3 rounded" style="background-color: var(--card-bg-darker); border: 1px solid var(--border-color); color: #e4ebfa;"><code>curl -X GET http://localhost:5000/api/files/1/report -o report.html</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Technologies Used</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fab fa-python fa-2x text-primary me-3"></i>
+                                <h4 class="mb-0">Python</h4>
+                            </div>
+                            <p>Core programming language used for the application.</p>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-flask fa-2x text-danger me-3"></i>
+                                <h4 class="mb-0">Flask</h4>
+                            </div>
+                            <p>Lightweight web framework for building the application.</p>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-database fa-2x text-success me-3"></i>
+                                <h4 class="mb-0">SQLAlchemy</h4>
+                            </div>
+                            <p>SQL toolkit and ORM for database management.</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-image fa-2x text-info me-3"></i>
+                                <h4 class="mb-0">Pillow</h4>
+                            </div>
+                            <p>Python Imaging Library for image metadata extraction.</p>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                                <h4 class="mb-0">PyPDF2</h4>
+                            </div>
+                            <p>PDF processing library for extracting PDF metadata.</p>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-file-word fa-2x text-primary me-3"></i>
+                                <h4 class="mb-0">python-docx</h4>
+                            </div>
+                            <p>Library for extracting metadata from DOCX files.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Staggered animation for API table rows
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.file-row');
+        rows.forEach((row, index) => {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(10px)';
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+            setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+
+        // Apply different float animation delays to file icons
+        const fileIcons = document.querySelectorAll('.file-icon');
+        fileIcons.forEach((icon, index) => {
+            icon.style.animationDelay = `${index * 0.2}s`;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,916 @@
+{% extends "base.html" %}
+
+{% block title %}File Details - MetaXtract{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/jquery.jsonview@1.2.0/dist/jquery.jsonview.min.css" rel="stylesheet">
+<style>
+    .extracted-text-container {
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        background-color: var(--darker-bg);
+        color: var(--text-color);
+        padding: 15px;
+        border-radius: 12px;
+        font-family: 'Courier New', monospace;
+        line-height: 1.5;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Raw metadata text styling */
+    .raw-metadata-display {
+        white-space: pre-wrap;
+        max-height: 500px;
+        overflow-y: auto;
+        background-color: var(--darker-bg);
+        color: var(--text-color);
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Highlight field labels in the raw metadata */
+    .raw-metadata-display .field-label {
+        color: var(--primary-color);
+        font-weight: bold;
+    }
+
+    /* Section headers in the raw metadata */
+    .raw-metadata-display .section-header {
+        color: var(--accent-color);
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
+
+    /* Custom scrollbar for the text sections */
+    .extracted-text-container::-webkit-scrollbar,
+    .raw-metadata-display::-webkit-scrollbar {
+        width: 8px;
+    }
+    .extracted-text-container::-webkit-scrollbar-track,
+    .raw-metadata-display::-webkit-scrollbar-track {
+        background: var(--darker-bg);
+    }
+    .extracted-text-container::-webkit-scrollbar-thumb,
+    .raw-metadata-display::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    /* Add highlight for the section */
+    .text-preview-card {
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .copy-text-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+        opacity: 0.7;
+        transition: all 0.2s;
+    }
+
+    .copy-text-btn:hover {
+        opacity: 1;
+    }
+
+    .word-count {
+        color: var(--mid-text);
+        font-size: 0.9rem;
+        margin-top: 8px;
+        text-align: right;
+    }
+
+    /* Table styling overrides for dark theme */
+    .table {
+        color: var(--text-primary) !important;
+        background-color: transparent !important;
+    }
+
+    .table th,
+    .table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+    }
+
+    .table-sm tbody tr th {
+        color: var(--text-secondary) !important;
+    }
+
+    .file-metadata-table {
+        width: 100%;
+        color: var(--text-primary) !important;
+        background-color: transparent !important;
+    }
+
+    .file-metadata-table th {
+        width: 35%;
+        color: var(--text-secondary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+    }
+
+    .file-metadata-table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+    }
+
+    /* For accordion tables */
+    .accordion-body .table {
+        background-color: transparent !important;
+        color: var(--text-primary) !important;
+    }
+
+    .accordion-body .table th,
+    .accordion-body .table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(0, 153, 255, 0.05) !important;
+    }
+
+    /* Fix for Bootstrap defaults */
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* Fix bootstrap accordion */
+    .accordion-item {
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    .accordion-button {
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: var(--card-bg-darker) !important;
+        color: var(--accent-blue) !important;
+    }
+
+    .accordion-button::after {
+        filter: invert(1);
+    }
+
+    .metadata-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 8px;
+        background-color: var(--darker-bg);
+        color: var(--text-color);
+        white-space: normal;
+        word-break: break-all;
+        text-align: left;
+        max-width: 100%;
+        height: auto;
+        line-height: 1.3;
+        display: inline-block;
+    }
+
+    .json-data {
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 0.85rem;
+    }
+
+    /* File icon styling */
+    .file-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        margin-right: 15px;
+        font-size: 30px;
+    }
+
+    .file-icon.image {
+        background-color: rgba(115, 113, 252, 0.15);
+        color: var(--primary-color);
+    }
+
+    .file-icon.pdf {
+        background-color: rgba(234, 85, 85, 0.15);
+        color: var(--danger-color);
+    }
+
+    .file-icon.excel {
+        background-color: rgba(75, 207, 122, 0.15);
+        color: var(--success-color);
+    }
+
+    .file-icon.document {
+        background-color: rgba(52, 152, 219, 0.15);
+        color: var(--primary-color);
+    }
+
+    .file-icon.default {
+        background-color: rgba(170, 170, 170, 0.15);
+        color: var(--mid-text);
+    }
+
+    /* JSON view container with proper scrolling */
+    #json-view {
+        overflow: auto;
+        max-height: 500px;
+        margin-top: 0.5rem;
+        border-radius: 12px;
+        background-color: var(--darker-bg);
+        padding: 15px;
+    }
+
+    /* Breadcrumb styling */
+    .breadcrumb {
+        background: transparent;
+        padding: 0.75rem 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--mid-text);
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: var(--text-color);
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: var(--mid-text);
+    }
+
+    /* Better spacing for mobile views */
+    @media (max-width: 768px) {
+        .row {
+            flex-direction: column;
+        }
+        .col-md-4, .col-md-8 {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.file_list') }}">Files</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ file.original_filename }}</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="file-icon
+                            {% if file.mime_type.startswith('image/') %}
+                                image
+                            {% elif file.mime_type == 'application/pdf' %}
+                                pdf
+                            {% elif 'spreadsheet' in file.mime_type or file.file_extension in ['xlsx', 'xls', 'csv'] %}
+                                excel
+                            {% elif 'document' in file.mime_type or file.file_extension in ['docx', 'doc'] %}
+                                document
+                            {% else %}
+                                default
+                            {% endif %}
+                        ">
+                            {% if file.mime_type.startswith('image/') %}
+                                <i class="fas fa-image"></i>
+                            {% elif file.mime_type == 'application/pdf' %}
+                                <i class="fas fa-file-pdf"></i>
+                            {% elif 'spreadsheet' in file.mime_type or file.file_extension in ['xlsx', 'xls', 'csv'] %}
+                                <i class="fas fa-file-excel"></i>
+                            {% elif 'document' in file.mime_type or file.file_extension in ['docx', 'doc'] %}
+                                <i class="fas fa-file-word"></i>
+                            {% else %}
+                                <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ file.original_filename }}</h3>
+                            <p class="text-mid-text mb-0">{{ file.file_size|format_bytes }} • {{ file.mime_type }} • Uploaded {{ file.uploaded_at.strftime('%Y-%m-%d at %H:%M') }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex mt-3 justify-content-end">
+                        <a href="{{ url_for('main.download_file', file_id=file.id) }}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-download me-2"></i> Download File
+                        </a>
+                        <a href="{{ url_for('api.generate_file_report', file_id=file.id) }}" class="btn btn-outline-success me-2">
+                            <i class="fas fa-file-alt me-2"></i> Generate Report
+                        </a>
+                        <button id="analyzeBtn" class="btn btn-outline-info me-2" onclick="analyzeMetadata({{ file.id }})">
+                            <i class="fas fa-brain me-2"></i> Analyze with AI
+                        </button>
+                        <button id="cleanMetadataBtn" class="btn btn-outline-warning me-2" onclick="cleanMetadata({{ file.id }})">
+                            <i class="fas fa-eraser me-2"></i> Remove Metadata
+                        </button>
+                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - File Information -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">File Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm file-metadata-table">
+                        <tbody>
+                            <tr>
+                                <th>ID</th>
+                                <td>{{ file.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Original Filename</th>
+                                <td>{{ file.original_filename }}</td>
+                            </tr>
+
+
+                            <tr>
+                                <th>Extension</th>
+                                <td>{{ file.file_extension }}</td>
+                            </tr>
+                            <tr>
+                                <th>Size</th>
+                                <td>{{ file.file_size|format_bytes }}</td>
+                            </tr>
+                            <tr>
+                                <th>Uploaded At</th>
+                                <td>{{ file.uploaded_at|datetime }}</td>
+                            </tr>
+
+                            {% if metadata and metadata.extraction_duration %}
+                            <tr>
+                                <th>Extraction Time</th>
+                                <td>{{ metadata.extraction_duration }} ms</td>
+                            </tr>
+                            {% endif %}
+                            {% if metadata %}
+                            <tr>
+                                <th>Metadata Type</th>
+                                <td>{{ metadata.metadata_type }}</td>
+                            </tr>
+                            <tr>
+                                <th>Extracted At</th>
+                                <td>{{ metadata.extracted_at|datetime }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ url_for('main.download_file', file_id=file.id) }}" class="btn btn-success">
+                            <i class="fas fa-download me-2"></i> Download File
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i> Delete File
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {% if file.mime_type.startswith('image/') %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Image Preview</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('main.download_file', file_id=file.id) }}" class="img-fluid rounded" alt="{{ file.original_filename }}">
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right Column - Metadata Content -->
+        <div class="col-md-8">
+            {% if metadata %}
+                <!-- AI Analysis Section -->
+                <div class="card mb-4" id="aiAnalysisCard" {% if not metadata.ai_analysis %}style="display: none;"{% endif %}>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-brain me-2"></i> AI Analysis</h5>
+                        <span class="badge {% if metadata.ai_analysis and (metadata.ai_analysis.has_anomalies or metadata.ai_analysis.has_privacy_concerns) %}bg-warning{% else %}bg-success{% endif %} rounded-pill">
+                            {% if metadata.ai_analysis and (metadata.ai_analysis.has_anomalies or metadata.ai_analysis.has_privacy_concerns) %}
+                                <i class="fas fa-exclamation-triangle me-1"></i> Issues Detected
+                            {% else %}
+                                <i class="fas fa-check-circle me-1"></i> No Issues
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="aiAnalysisLoading" style="display: none;">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <p class="text-center mt-2">Analyzing metadata with AI...</p>
+                        </div>
+
+                        <div id="aiAnalysisContent" {% if not metadata.ai_analysis %}style="display: none;"{% endif %}>
+                            <h6 class="card-subtitle mb-3">Summary</h6>
+                            <div class="alert alert-info">
+                                <p id="aiSummary" class="mb-0">{% if metadata.ai_analysis %}{{ metadata.ai_analysis.summary }}{% endif %}</p>
+                            </div>
+
+                            {% if metadata.ai_analysis and metadata.ai_analysis.has_anomalies %}
+                            <div class="mt-3">
+                                <h6 class="card-subtitle mb-2">Anomalies Detected</h6>
+                                <div class="alert alert-warning">
+                                    <p class="mb-0">{{ metadata.ai_analysis.analysis_json.anomalies.details }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if metadata.ai_analysis and metadata.ai_analysis.has_privacy_concerns %}
+                            <div class="mt-3">
+                                <h6 class="card-subtitle mb-2">Privacy Concerns</h6>
+                                <div class="alert alert-danger">
+                                    <p class="mb-0">{{ metadata.ai_analysis.analysis_json.privacy_concerns.details }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="mt-3 text-end">
+                                <small class="text-muted">
+                                    {% if metadata.ai_analysis %}
+                                    Analysis performed on {{ metadata.ai_analysis.analyzed_at.strftime('%Y-%m-%d at %H:%M') }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-primary" onclick="analyzeMetadata({{ file.id }}, true)">
+                                <i class="fas fa-sync-alt me-1"></i> Refresh Analysis
+                            </button>
+                            <a href="{{ url_for('api.generate_file_report', file_id=file.id) }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-file-alt me-1"></i> Download Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {% if file.mime_type.startswith('image/') and metadata.exif_detailed %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">EXIF Metadata</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if metadata.gps_coordinates %}
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading"><i class="fas fa-map-marker-alt me-2"></i>Location Information</h6>
+                            <p class="mb-1">Latitude: {{ "%.6f"|format(metadata.gps_coordinates.latitude) }}</p>
+                            <p class="mb-1">Longitude: {{ "%.6f"|format(metadata.gps_coordinates.longitude) }}</p>
+                            <a href="{{ metadata.gps_coordinates.google_maps_url }}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-external-link-alt me-1"></i> View on Google Maps
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <div class="accordion" id="exifAccordion">
+                            {% for category, tags in metadata.exif_detailed.items() %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                        {{ category }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#exifAccordion">
+                                    <div class="accordion-body">
+                                        <table class="table table-sm">
+                                            <tbody>
+                                                {% for tag, value in tags.items() %}
+                                                <tr>
+                                                    <th scope="row">{{ tag }}</th>
+                                                    <td>{{ value }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+
+
+
+
+                <!-- Raw Metadata -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Raw File Metadata</h5>
+                        <button id="copy-metadata-btn" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-copy me-1"></i> Copy
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="raw-metadata-text" class="raw-metadata-display"><span class="field-label">File ID:</span> {{ file.id }}
+<span class="field-label">Original Filename:</span> {{ file.original_filename }}
+<span class="field-label">MIME Type:</span> {{ file.mime_type }}
+<span class="field-label">Extension:</span> {{ file.file_extension }}
+<span class="field-label">Size:</span> {{ file.file_size }} bytes ({{ file.file_size|format_bytes }})
+<span class="field-label">Uploaded At:</span> {{ file.uploaded_at }}
+
+{% if metadata %}
+<span class="section-header">METADATA INFORMATION</span>
+<span class="field-label">Metadata Type:</span> {{ metadata.metadata_type }}
+<span class="field-label">Extraction Time:</span> {{ metadata.extracted_at }}
+
+{% if metadata.metadata_json %}
+<span class="section-header">METADATA JSON</span>
+{{ metadata.metadata_json|tojson(indent=2) }}
+{% endif %}
+
+{% if metadata.extracted_text %}
+<span class="section-header">EXTRACTED TEXT</span>
+{{ metadata.extracted_text }}
+{% endif %}
+{% else %}
+No metadata available for this file.
+{% endif %}</div>
+                    </div>
+                </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i> No metadata has been extracted for this file.
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">API Access</h5>
+                </div>
+                <div class="card-body">
+                    <p>You can access this file's metadata through the API:</p>
+                    <pre class="bg-light p-3 rounded"><code>GET /api/files/{{ file.id }}</code></pre>
+                    <button id="copy-api-url-btn" class="btn btn-sm btn-outline-primary" data-url="/api/files/{{ file.id }}">
+                        <i class="fas fa-copy me-1"></i> Copy API URL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ file.original_filename }}</strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if metadata and metadata.metadata_json %}
+<!-- Debug info - only show in development -->
+<div class="card mb-4" style="display:none;">
+    <div class="card-header">
+        <h5 class="mb-0">Debug Info</h5>
+    </div>
+    <div class="card-body">
+        <p>Metadata Type: {{ metadata.metadata_type }}</p>
+        <p>JSON Data Type: {{ metadata.metadata_json.__class__.__name__ }}</p>
+        <pre>{{ metadata.metadata_json|tojson }}</pre>
+    </div>
+</div>
+
+<script type="application/json" id="metadata-json">
+{{ metadata.metadata_json|tojson }}
+</script>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jquery.jsonview@1.2.0/dist/jquery.jsonview.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to clean metadata from a file
+    window.cleanMetadata = function(fileId) {
+        if (!confirm('Are you sure you want to remove all metadata from this file? This action cannot be undone.')) {
+            return;
+        }
+
+        // Disable the button and show loading state
+        const cleanBtn = document.getElementById('cleanMetadataBtn');
+        const originalText = cleanBtn.innerHTML;
+        cleanBtn.disabled = true;
+        cleanBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Removing Metadata...';
+
+        // Call the API to clean metadata
+        fetch(`/api/files/${fileId}/clean-metadata`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                alert('Metadata successfully removed from file. The page will now reload to show updated metadata.');
+                // Reload the page to show updated metadata
+                window.location.reload();
+            } else {
+                // Show error message
+                alert(`Error: ${data.error || 'Unknown error occurred'}`);
+                // Reset button
+                cleanBtn.disabled = false;
+                cleanBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error cleaning metadata:', error);
+            alert('An error occurred while removing metadata. Please try again.');
+            // Reset button
+            cleanBtn.disabled = false;
+            cleanBtn.innerHTML = originalText;
+        });
+    };
+    console.log("Document loaded, checking for metadata");
+    // Initialize JSON viewer if metadata exists
+    var metadataElement = document.getElementById('metadata-json');
+    if (metadataElement) {
+        console.log("Metadata element found");
+        try {
+            var metadataJson = JSON.parse(metadataElement.textContent);
+            console.log("Successfully parsed JSON data");
+            // Make sure the container exists
+            var container = document.getElementById('json-view');
+            if (container) {
+                console.log("Initializing JSONView");
+                $(container).JSONView(metadataJson, { collapsed: true });
+                console.log("JSONView initialized");
+            } else {
+                console.error("json-view container not found");
+            }
+        } catch (e) {
+            console.error("Error parsing JSON:", e);
+            console.error("JSON content:", metadataElement.textContent);
+        }
+    } else {
+        console.log("No metadata element found");
+    }
+
+    // Function to analyze metadata with Gemini AI
+    window.analyzeMetadata = function(fileId, force = false) {
+        // Show loading indicator
+        document.getElementById('aiAnalysisCard').style.display = 'block';
+        document.getElementById('aiAnalysisLoading').style.display = 'block';
+        document.getElementById('aiAnalysisContent').style.display = 'none';
+        document.getElementById('analyzeBtn').disabled = true;
+
+        // Prepare URL with force parameter if needed
+        let url = `/api/files/${fileId}/analyze`;
+        if (force) {
+            url += '?force=true';
+        }
+
+        // Make API request
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update UI with analysis results
+                document.getElementById('aiSummary').textContent = data.analysis.summary;
+
+                // Show or hide anomalies section
+                const hasAnomalies = data.analysis.has_anomalies;
+                const hasPrivacyConcerns = data.analysis.has_privacy_concerns;
+
+                // Update badge
+                const badge = document.querySelector('#aiAnalysisCard .badge');
+                if (hasAnomalies || hasPrivacyConcerns) {
+                    badge.className = 'badge bg-warning rounded-pill';
+                    badge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Issues Detected';
+                } else {
+                    badge.className = 'badge bg-success rounded-pill';
+                    badge.innerHTML = '<i class="fas fa-check-circle me-1"></i> No Issues';
+                }
+
+                // Reload the page to show the updated analysis
+                // This is a simple approach; a more advanced approach would update the DOM directly
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Show error
+                document.getElementById('aiSummary').textContent = `Error: ${data.error || 'Unknown error'}`;
+                document.getElementById('aiAnalysisContent').style.display = 'block';
+
+                // Update the badge to show error state
+                const badge = document.querySelector('#aiAnalysisCard .badge');
+                badge.className = 'badge bg-danger rounded-pill';
+                badge.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Error';
+
+                // Change the alert style to indicate error
+                const alertBox = document.querySelector('#aiSummary').closest('.alert');
+                alertBox.className = 'alert alert-danger';
+            }
+        })
+        .catch(error => {
+            console.error('Error analyzing metadata:', error);
+            // Update the summary with the error message
+            document.getElementById('aiSummary').textContent = `Error: ${error.message}`;
+            document.getElementById('aiAnalysisContent').style.display = 'block';
+
+            // Update the badge to show error state
+            const badge = document.querySelector('#aiAnalysisCard .badge');
+            badge.className = 'badge bg-danger rounded-pill';
+            badge.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Error';
+
+            // Change the alert style to indicate error
+            const alertBox = document.querySelector('#aiSummary').closest('.alert');
+            alertBox.className = 'alert alert-danger';
+        })
+        .finally(() => {
+            // Hide loading indicator
+            document.getElementById('aiAnalysisLoading').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = false;
+        });
+    };
+
+    // Expand/Collapse all buttons
+    $('#expand-all').click(function() {
+        $('#json-view').JSONView('expand');
+    });
+
+    $('#collapse-all').click(function() {
+        $('#json-view').JSONView('collapse');
+    });
+
+    // Copy API URL
+    const copyApiUrlBtn = document.getElementById('copy-api-url-btn');
+    if (copyApiUrlBtn) {
+        console.log("API URL copy button found");
+        copyApiUrlBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("Copy API URL button clicked");
+            const url = window.location.origin + this.getAttribute('data-url');
+            console.log("Copying URL:", url);
+
+            // Use modern clipboard API with fallback
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url)
+                    .then(() => {
+                        console.log("URL copied successfully");
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error("Error copying URL:", err);
+                        alert('Failed to copy URL: ' + err.message);
+                    });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        console.log("URL copied using execCommand");
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    } else {
+                        console.error("Copy command failed");
+                        alert('Failed to copy URL');
+                    }
+                } catch (err) {
+                    console.error("Error copying URL with execCommand:", err);
+                    alert('Failed to copy URL: ' + err.message);
+                }
+
+                document.body.removeChild(textArea);
+            }
+        });
+    } else {
+        console.error("API URL copy button not found");
+    }
+
+    // Delete file
+    document.getElementById('confirm-delete').addEventListener('click', function() {
+        // Create a form to submit the delete request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/delete_file/{{ file.id }}';
+
+        // Add CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrf_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        form.appendChild(csrfToken);
+
+        // Add the form to the document and submit it
+        document.body.appendChild(form);
+        form.submit();
+    });
+
+    // Copy extracted text
+    const copyTextBtn = document.getElementById('copy-text-btn');
+    if (copyTextBtn) {
+        copyTextBtn.addEventListener('click', function() {
+            const text = document.getElementById('extracted-text').textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                const originalText = copyTextBtn.innerHTML;
+                copyTextBtn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                setTimeout(function() {
+                    copyTextBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(function(err) {
+                alert('Error copying text: ' + err);
+            });
+        });
+    }
+
+    // Copy raw metadata
+    const copyMetadataBtn = document.getElementById('copy-metadata-btn');
+    if (copyMetadataBtn) {
+        copyMetadataBtn.addEventListener('click', function() {
+            const metadataContainer = document.getElementById('raw-metadata-text');
+            const text = metadataContainer.innerText || metadataContainer.textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                const originalText = copyMetadataBtn.innerHTML;
+                copyMetadataBtn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+                setTimeout(function() {
+                    copyMetadataBtn.innerHTML = originalText;
+                }, 2000);
+            }).catch(function(err) {
+                alert('Error copying metadata: ' + err);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

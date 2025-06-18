@@ -1,0 +1,697 @@
+{% extends "base.html" %}
+
+{% block title %}Upload File - ZeroTrust Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-container {
+        background: linear-gradient(135deg, var(--card-bg), #2a2a2a);
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 153, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+
+    .upload-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .upload-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(0, 153, 255, 0.03), rgba(0, 153, 255, 0.01));
+        z-index: 0;
+    }
+
+    .upload-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .drag-area {
+        border: 2px dashed rgba(0, 153, 255, 0.3);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 3rem;
+        background-color: rgba(0, 153, 255, 0.03);
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .drag-area.active {
+        border: 2px solid var(--accent-blue);
+        background-color: rgba(0, 153, 255, 0.08);
+        transform: scale(1.02);
+    }
+
+    .drag-area .icon {
+        font-size: 75px;
+        color: var(--accent-blue);
+        opacity: 0.7;
+        margin-bottom: 20px;
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        transform-origin: center;
+    }
+
+    .drag-area:hover .icon {
+        transform: translateY(-10px);
+        color: var(--accent-light);
+        opacity: 1;
+    }
+
+    .drag-area.active .icon {
+        transform: scale(1.2) rotate(10deg);
+        animation: float 2s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0% {
+            transform: translateY(0) scale(1.2) rotate(10deg);
+        }
+        50% {
+            transform: translateY(-10px) scale(1.2) rotate(5deg);
+        }
+        100% {
+            transform: translateY(0) scale(1.2) rotate(10deg);
+        }
+    }
+
+    .drag-area header {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #ffffff, var(--accent-light));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .drag-area p {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .particles-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .particle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background-color: var(--accent-blue);
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.3s ease, transform 3s ease;
+        pointer-events: none;
+    }
+
+    .file-types {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .file-type {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: rgba(0, 153, 255, 0.05);
+        padding: 15px;
+        border-radius: 10px;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        border: 1px solid rgba(0, 153, 255, 0.1);
+        width: 110px;
+        position: relative;
+        transform-style: preserve-3d;
+        perspective: 500px;
+    }
+
+    .file-type:hover {
+        background-color: rgba(0, 153, 255, 0.1);
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent-blue);
+    }
+
+    .file-type-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-bottom: 10px;
+        font-size: 24px;
+        transition: all 0.5s ease;
+        animation: float-icon 3s ease-in-out infinite;
+    }
+
+    @keyframes float-icon {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0);
+        }
+    }
+
+    .file-type:nth-child(1) .file-type-icon {
+        animation-delay: 0s;
+    }
+
+    .file-type:nth-child(2) .file-type-icon {
+        animation-delay: 0.2s;
+    }
+
+    .file-type:nth-child(3) .file-type-icon {
+        animation-delay: 0.4s;
+    }
+
+    .file-type:nth-child(4) .file-type-icon {
+        animation-delay: 0.6s;
+    }
+
+    .file-type:hover .file-type-icon {
+        transform: rotate(15deg) scale(1.2);
+    }
+
+    .file-type-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .file-type.images .file-type-icon {
+        background-color: rgba(0, 153, 255, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .file-type.documents .file-type-icon {
+        background-color: rgba(255, 58, 94, 0.1);
+        color: var(--danger-color);
+    }
+
+    .file-type.spreadsheets .file-type-icon {
+        background-color: rgba(10, 207, 131, 0.1);
+        color: var(--success-color);
+    }
+
+    .file-type.audio .file-type-icon {
+        background-color: rgba(255, 178, 43, 0.1);
+        color: #FFB22B;
+    }
+
+    .security-features {
+        margin-top: 4rem;
+    }
+
+    .security-feature {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .security-feature:hover {
+        background-color: rgba(0, 153, 255, 0.05);
+        transform: translateX(10px);
+    }
+
+    .security-icon {
+        width: 48px;
+        height: 48px;
+        background-color: rgba(0, 153, 255, 0.1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-blue);
+        font-size: 24px;
+        margin-right: 20px;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+
+    .security-feature:hover .security-icon {
+        transform: rotate(15deg) scale(1.2);
+        background-color: var(--accent-blue);
+        color: white;
+    }
+
+    .security-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .security-feature:hover .security-content h3 {
+        color: var(--accent-blue);
+    }
+
+    .security-content p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .processing-indicator {
+        display: none;
+        margin-top: 20px;
+        text-align: center;
+        padding: 20px;
+        background-color: rgba(0, 153, 255, 0.05);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 153, 255, 0.2);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 153, 255, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 153, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 153, 255, 0); }
+    }
+
+    .progress-ring {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid rgba(0, 153, 255, 0.1);
+        border-top: 3px solid var(--accent-blue);
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #fileElem {
+        display: none;
+    }
+
+    #uploadForm {
+        margin-bottom: 0;
+    }
+
+    .upload-success {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(10, 207, 131, 0.2);
+        border-radius: 16px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 10;
+        animation: fadeIn 0.5s ease-out;
+        border: 2px solid rgba(10, 207, 131, 0.4);
+        box-shadow: 0 0 20px rgba(10, 207, 131, 0.3);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background-color: var(--success-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        font-size: 40px;
+        color: white;
+        transform: scale(0);
+        animation: pop-in 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards, pulse-success 2s infinite 0.5s;
+        box-shadow: 0 0 20px rgba(10, 207, 131, 0.5);
+    }
+
+    @keyframes pop-in {
+        0% { transform: scale(0); }
+        70% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes pulse-success {
+        0% { box-shadow: 0 0 0 0 rgba(10, 207, 131, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(10, 207, 131, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(10, 207, 131, 0); }
+    }
+
+    .magnetic-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        transform-style: preserve-3d;
+        transform: perspective(500px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mb-5">
+                <div class="card-header">
+                    <h2 class="mb-0 fs-4">
+                        <i class="fas fa-upload me-2"></i> Upload File for Analysis
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="upload-container">
+                        <div class="upload-content">
+                            <form id="uploadForm" action="{{ url_for('main.upload_file') }}" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div id="drop-area" class="drag-area">
+                                    <div class="particles-container" id="particles"></div>
+                                    <i class="fas fa-cloud-upload-alt icon"></i>
+                                    <header>Drag & Drop File</header>
+                                    <p>or <strong>Click to Browse</strong><br>
+                                    <span class="small text-mid-text">Maximum file size: 100MB</span></p>
+                                    <input type="file" id="fileElem" name="file" accept="*/*">
+
+                                    <div class="upload-success" id="uploadSuccess">
+                                        <div class="success-icon">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <header>File Selected!</header>
+                                        <p>Preparing to upload and analyze your file...<br><strong>Please wait</strong></p>
+                                    </div>
+                                </div>
+                                <div id="processing" class="processing-indicator">
+                                    <div class="progress-ring"></div>
+                                    <p class="mb-0">Analyzing file and extracting metadata...</p>
+                                    <p class="small text-mid-text">This may take a moment depending on file size and complexity</p>
+                                    <div class="alert alert-info mt-3" style="display: none;" id="upload-status">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <span>Upload in progress...</span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="file-types">
+                        <div class="file-type images">
+                            <div class="file-type-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="file-type-label">Images</div>
+                        </div>
+                        <div class="file-type documents">
+                            <div class="file-type-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="file-type-label">Documents</div>
+                        </div>
+                        <div class="file-type spreadsheets">
+                            <div class="file-type-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="file-type-label">Spreadsheets</div>
+                        </div>
+                        <div class="file-type audio">
+                            <div class="file-type-icon">
+                                <i class="fas fa-file-audio"></i>
+                            </div>
+                            <div class="file-type-label">Other Files</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0 fs-4">
+                        <i class="fas fa-shield-alt me-2"></i> Security Features
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="security-features">
+                        <div class="security-feature">
+                            <div class="security-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="security-content">
+                                <h3>Steganography Detection</h3>
+                                <p>Our advanced algorithms can detect hidden content in images using LSB, chi-square, sample pair analysis and other methods to identify potential security risks.</p>
+                            </div>
+                        </div>
+                        <div class="security-feature">
+                            <div class="security-icon">
+                                <i class="fas fa-fingerprint"></i>
+                            </div>
+                            <div class="security-content">
+                                <h3>Cryptographic Hash Verification</h3>
+                                <p>Every file is automatically hashed using SHA-256 algorithm to create a unique fingerprint for future verification and integrity checking.</p>
+                            </div>
+                        </div>
+                        <div class="security-feature">
+                            <div class="security-icon">
+                                <i class="fas fa-user-secret"></i>
+                            </div>
+                            <div class="security-content">
+                                <h3>Privacy Protection</h3>
+                                <p>Sensitive metadata like GPS coordinates, device information, and author details are identified, allowing you to make informed decisions about content sharing.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropArea = document.getElementById('drop-area');
+        const fileElem = document.getElementById('fileElem');
+        const uploadForm = document.getElementById('uploadForm');
+        const processing = document.getElementById('processing');
+        const uploadSuccess = document.getElementById('uploadSuccess');
+        const particles = document.getElementById('particles');
+
+        // Create particles
+        function createParticles() {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particles.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        // Handle cursor interactions with the drop area
+        dropArea.addEventListener('mousemove', function(e) {
+            const x = e.clientX - this.getBoundingClientRect().left;
+            const y = e.clientY - this.getBoundingClientRect().top;
+
+            const icon = this.querySelector('.icon');
+            const centerX = this.offsetWidth / 2;
+            const centerY = this.offsetHeight / 2;
+
+            const deltaX = (x - centerX) / 20;
+            const deltaY = (y - centerY) / 20;
+
+            if (!dropArea.classList.contains('active')) {
+                icon.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px)`;
+            }
+
+            // Animate particles on mousemove
+            document.querySelectorAll('.particle').forEach((particle, index) => {
+                const delay = index * 50;
+                const size = Math.random() * 6 + 3;
+                const speedX = (Math.random() - 0.5) * 2;
+                const speedY = (Math.random() - 0.5) * 2;
+
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.opacity = '0';
+
+                setTimeout(() => {
+                    particle.style.transition = 'opacity 0.3s ease, transform 3s ease';
+                    particle.style.opacity = '0.4';
+                    particle.style.transform = `translate(${speedX * 100}px, ${speedY * 100}px)`;
+
+                    setTimeout(() => {
+                        particle.style.opacity = '0';
+                    }, 1000);
+                }, delay);
+            });
+        });
+
+        dropArea.addEventListener('mouseleave', function() {
+            const icon = this.querySelector('.icon');
+            if (!dropArea.classList.contains('active')) {
+                icon.style.transform = 'translateX(0px) translateY(0px)';
+            }
+        });
+
+        // Apply magnetic button effect
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(btn => {
+            btn.classList.add('magnetic-btn');
+
+            btn.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                this.style.transform = `translate(${x / 10}px, ${y / 10}px)`;
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translate(0px, 0px)';
+            });
+        });
+
+        // 3D tilt effect for file type cards
+        const fileTypes = document.querySelectorAll('.file-type');
+        fileTypes.forEach(card => {
+            card.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const angleX = (y - centerY) / 10;
+                const angleY = (centerX - x) / 10;
+
+                this.style.transform = `perspective(1000px) rotateX(${angleX}deg) rotateY(${angleY}deg) translateY(-8px)`;
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+            });
+        });
+
+        // Existing drag and drop functionality with added animations
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('active');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('active');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                fileElem.files = files;
+                // Show uploading animation
+                dropArea.classList.add('active');
+
+                // Show success animation after a delay
+                setTimeout(() => {
+                    uploadSuccess.style.display = 'flex';
+
+                    // Submit the form after animation
+                    setTimeout(() => {
+                        processing.style.display = 'block';
+                        // Show the status alert
+                        const uploadStatus = document.getElementById('upload-status');
+                        uploadStatus.style.display = 'block';
+
+                        // Add a clear message to the user
+                        const processingText = document.querySelector('#processing p');
+                        processingText.innerHTML = 'Uploading and analyzing file... <br><strong>You will be redirected when complete.</strong>';
+
+                        // Update status message every second
+                        let seconds = 0;
+                        const statusInterval = setInterval(() => {
+                            seconds++;
+                            uploadStatus.querySelector('span').textContent = `Upload in progress... (${seconds}s)`;
+                        }, 1000);
+
+                        // Submit the form
+                        uploadForm.submit();
+                    }, 1500);
+                }, 800);
+            }
+        }
+
+        // Click to browse files
+        dropArea.addEventListener('click', function() {
+            fileElem.click();
+        });
+
+        // Add event listener for file input change
+        fileElem.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleFiles(this.files);
+            }
+        });
+    });
+</script>
+{% endblock %}

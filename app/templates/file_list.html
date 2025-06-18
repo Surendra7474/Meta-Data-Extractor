@@ -1,0 +1,615 @@
+{% extends "base.html" %}
+
+{% block title %}File List - ZeroTrust Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .file-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-container {
+        position: relative;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    .search-input {
+        background-color: var(--card-bg);
+        border: 1px solid rgba(0, 153, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        width: 100%;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(0, 153, 255, 0.1);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+
+    .file-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+
+    .file-table th {
+        background-color: rgba(0, 153, 255, 0.05);
+        font-weight: 600;
+        color: var(--text-primary);
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .file-table tr {
+        transition: all 0.2s ease;
+    }
+
+    .file-table tr:hover {
+        background-color: rgba(0, 153, 255, 0.05);
+        transform: translateX(5px);
+    }
+
+    .file-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+    }
+
+    .file-table .file-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 18px;
+        margin-right: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .file-table tr:hover .file-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .file-table .file-name-cell {
+        display: flex;
+        align-items: center;
+    }
+
+    .file-table .file-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .file-table .file-name {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+
+    .file-table .file-size {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .file-type-image .file-icon {
+        background-color: rgba(0, 153, 255, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .file-type-pdf .file-icon {
+        background-color: rgba(255, 58, 94, 0.1);
+        color: var(--danger-color);
+    }
+
+    .file-type-document .file-icon {
+        background-color: rgba(17, 110, 238, 0.1);
+        color: #116EEE;
+    }
+
+    .file-type-spreadsheet .file-icon {
+        background-color: rgba(10, 207, 131, 0.1);
+        color: var(--success-color);
+    }
+
+    .file-type-audio .file-icon {
+        background-color: rgba(255, 178, 43, 0.1);
+        color: #FFB22B;
+    }
+
+    .file-type-other .file-icon {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .pagination {
+        display: flex;
+        list-style-type: none;
+        padding: 0;
+        gap: 5px;
+    }
+
+    .pagination-item {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background-color: var(--card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .pagination-item:hover {
+        background-color: rgba(0, 153, 255, 0.1);
+        border-color: rgba(0, 153, 255, 0.2);
+        transform: translateY(-3px);
+    }
+
+    .pagination-item.active {
+        background-color: var(--accent-blue);
+        color: white;
+        border-color: var(--accent-blue);
+    }
+
+    .file-action-cell {
+        white-space: nowrap;
+    }
+
+    .file-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background-color: rgba(0, 153, 255, 0.05);
+        color: var(--text-secondary);
+        margin-right: 5px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .file-action:hover {
+        background-color: rgba(0, 153, 255, 0.1);
+        color: var(--accent-blue);
+        transform: translateY(-3px);
+    }
+
+    .file-action.delete:hover {
+        background-color: rgba(255, 58, 94, 0.1);
+        color: var(--danger-color);
+    }
+
+    .timestamp {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: rgba(0, 153, 255, 0.03);
+        border-radius: 16px;
+        border: 1px dashed rgba(0, 153, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .empty-state:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent-blue);
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        transition: all 0.5s ease;
+    }
+
+    .empty-state:hover .empty-state-icon {
+        transform: scale(1.2) rotate(10deg);
+        color: var(--accent-blue);
+    }
+
+    .empty-state-text {
+        margin-bottom: 1.5rem;
+        color: var(--text-secondary);
+    }
+
+    /* Magnetic buttons effect */
+    .magnetic-btn {
+        position: relative;
+        transform-style: preserve-3d;
+        transform: perspective(500px);
+        transition-timing-function: cubic-bezier(0.1, 0.5, 0.1, 1);
+    }
+
+    /* Particle effects for uploads */
+    .particles-js {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        opacity: 0.2;
+    }
+
+    /* File icon float animation */
+    @keyframes float {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-5px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+    .file-icon-animate {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Stats hover effects */
+    .stat-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, transparent 0%, rgba(0, 153, 255, 0.03) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    /* Card hover lift effect */
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="file-list-header">
+                        <h2 class="mb-0 fs-4">
+                            <i class="fas fa-file-alt me-2"></i> Analyzed Files
+                        </h2>
+                        <div class="search-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="search-input" id="fileSearchInput" placeholder="Search by filename...">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if files %}
+                    <div class="table-responsive">
+                        <table class="file-table" id="fileTable">
+                            <thead>
+                                <tr>
+                                    <th>File</th>
+                                    <th>Mimetype</th>
+                                    <th>Uploaded</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                <tr>
+                                    <td class="file-name-cell">
+                                        <div class="file-icon file-icon-animate {% if 'image' in file.mime_type %}file-type-image{% elif 'pdf' in file.mime_type %}file-type-pdf{% elif 'document' in file.mime_type or 'msword' in file.mime_type %}file-type-document{% elif 'spreadsheet' in file.mime_type or 'excel' in file.mime_type %}file-type-spreadsheet{% elif 'audio' in file.mime_type %}file-type-audio{% else %}file-type-other{% endif %}">
+                                            <i class="fas {% if 'image' in file.mime_type %}fa-image{% elif 'pdf' in file.mime_type %}fa-file-pdf{% elif 'document' in file.mime_type or 'msword' in file.mime_type %}fa-file-word{% elif 'spreadsheet' in file.mime_type or 'excel' in file.mime_type %}fa-file-excel{% elif 'audio' in file.mime_type %}fa-file-audio{% else %}fa-file-alt{% endif %}"></i>
+                                        </div>
+                                        <div class="file-details">
+                                            <div class="file-name">{{ file.original_filename }}</div>
+                                            <div class="file-size">{{ (file.file_size / 1024)|round(1)|int if file.file_size < 1024 * 1024 else (file.file_size / (1024 * 1024))|round(2) }} {{ 'KB' if file.file_size < 1024 * 1024 else 'MB' }}</div>
+                                        </div>
+                                    </td>
+                                    <td>{{ file.mime_type }}</td>
+                                    <td>
+                                        <div class="timestamp">
+                                            {{ file.uploaded_at.strftime('%Y-%m-%d') }}<br>
+                                            <span class="text-muted">{{ file.uploaded_at.strftime('%H:%M:%S') }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end file-action-cell">
+                                        <a href="{{ url_for('main.file_details', file_id=file.id) }}" class="file-action magnetic-btn" title="View details" data-magnetic="true">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                        <a href="{{ url_for('main.download_file', file_id=file.id) }}" class="file-action magnetic-btn" title="Download file" data-magnetic="true">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <a href="#" class="file-action delete magnetic-btn" data-bs-toggle="modal" data-bs-target="#deleteFileModal" data-file-id="{{ file.id }}" data-file-name="{{ file.original_filename }}" title="Delete file" data-magnetic="true">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-file-upload"></i>
+                        </div>
+                        <h3>No files uploaded yet</h3>
+                        <p class="empty-state-text">Upload your first file to start analyzing metadata</p>
+                        <a href="{{ url_for('main.upload_file') }}" class="btn btn-primary magnetic-btn" data-magnetic="true">
+                            <i class="fas fa-upload me-2"></i> Upload File
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if files and files|length > 0 %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="mb-0 fs-4">
+                        <i class="fas fa-chart-pie me-2"></i> File Type Distribution
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% set file_types = { 'image': 0, 'document': 0, 'spreadsheet': 0, 'other': 0 } %}
+                        {% for file in files %}
+                            {% if 'image' in file.mime_type %}
+                                {% set _ = file_types.update({'image': file_types['image'] + 1}) %}
+                            {% elif 'pdf' in file.mime_type or 'msword' in file.mime_type or 'document' in file.mime_type %}
+                                {% set _ = file_types.update({'document': file_types['document'] + 1}) %}
+                            {% elif 'spreadsheet' in file.mime_type or 'excel' in file.mime_type %}
+                                {% set _ = file_types.update({'spreadsheet': file_types['spreadsheet'] + 1}) %}
+                            {% else %}
+                                {% set _ = file_types.update({'other': file_types['other'] + 1}) %}
+                            {% endif %}
+                        {% endfor %}
+
+                        <div class="col-6 col-md-3 mb-4">
+                            <div class="text-center">
+                                <div class="file-icon file-icon-animate file-type-image mx-auto mb-3">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <h5>Images</h5>
+                                <h3>{{ file_types['image'] }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-4">
+                            <div class="text-center">
+                                <div class="file-icon file-icon-animate file-type-pdf mx-auto mb-3">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <h5>Documents</h5>
+                                <h3>{{ file_types['document'] }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-4">
+                            <div class="text-center">
+                                <div class="file-icon file-icon-animate file-type-spreadsheet mx-auto mb-3">
+                                    <i class="fas fa-file-excel"></i>
+                                </div>
+                                <h5>Spreadsheets</h5>
+                                <h3>{{ file_types['spreadsheet'] }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3 mb-4">
+                            <div class="text-center">
+                                <div class="file-icon file-icon-animate file-type-other mx-auto mb-3">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <h5>Other</h5>
+                                <h3>{{ file_types['other'] }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-header">
+                    <h2 class="mb-0 fs-4">
+                        <i class="fas fa-info-circle me-2"></i> Quick Facts
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-4">
+                            <div>
+                                <h5>Total Files</h5>
+                                <h3>{{ files|length }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div>
+                                <h5>Total Storage</h5>
+                                <h3>{{ (files|sum(attribute='file_size') / (1024 * 1024))|round(2) }} MB</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div>
+                                <h5>Files with Metadata</h5>
+                                <h3>{{ files|selectattr('has_metadata', 'defined')|selectattr('has_metadata')|list|length }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div>
+                                <h5>Last Upload</h5>
+                                <h3>
+                                {% if files %}
+                                    {% set latest_upload = files|sort(attribute='uploaded_at', reverse=true)|first %}
+                                    {{ latest_upload.uploaded_at.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete File Modal -->
+<div class="modal fade" id="deleteFileModal" tabindex="-1" aria-labelledby="deleteFileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFileModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <span id="fileName"></span>? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteFileForm" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger magnetic-btn" data-magnetic="true">Delete File</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete file modal functionality
+        const deleteFileModal = document.getElementById('deleteFileModal');
+        if (deleteFileModal) {
+            deleteFileModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const fileId = button.getAttribute('data-file-id');
+                const fileName = button.getAttribute('data-file-name');
+
+                const modalFileName = document.getElementById('fileName');
+                const deleteForm = document.getElementById('deleteFileForm');
+
+                modalFileName.textContent = '"' + fileName + '"';
+                deleteForm.action = '/delete_file/' + fileId;
+            });
+        }
+
+        // Search functionality
+        const searchInput = document.getElementById('fileSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const filter = this.value.toLowerCase();
+                const table = document.getElementById('fileTable');
+                const rows = table.getElementsByTagName('tr');
+
+                // Skip header row (index 0)
+                for (let i = 1; i < rows.length; i++) {
+                    const fileNameCell = rows[i].getElementsByClassName('file-name')[0];
+                    if (fileNameCell) {
+                        const fileName = fileNameCell.textContent || fileNameCell.innerText;
+                        if (fileName.toLowerCase().indexOf(filter) > -1) {
+                            rows[i].style.display = '';
+                        } else {
+                            rows[i].style.display = 'none';
+                        }
+                    }
+                }
+            });
+        }
+
+        // Magnetic buttons
+        const magneticBtns = document.querySelectorAll('[data-magnetic="true"]');
+
+        magneticBtns.forEach(btn => {
+            btn.addEventListener('mousemove', function(e) {
+                const position = btn.getBoundingClientRect();
+                const x = e.clientX - position.left - position.width / 2;
+                const y = e.clientY - position.top - position.height / 2;
+
+                const modifier = 15; // Adjust this value to control the magnetic effect strength
+                btn.style.transform = `translate(${x / modifier}px, ${y / modifier}px)`;
+            });
+
+            btn.addEventListener('mouseout', function() {
+                btn.style.transform = 'translate(0px, 0px)';
+            });
+        });
+
+        // Staggered animation for table rows
+        const rows = document.querySelectorAll('#fileTable tbody tr');
+        rows.forEach((row, index) => {
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(10px)';
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+            setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+
+        // Apply different float animation delays to file icons
+        const fileIcons = document.querySelectorAll('.file-icon-animate');
+        fileIcons.forEach((icon, index) => {
+            icon.style.animationDelay = `${index * 0.2}s`;
+        });
+    });
+</script>
+{% endblock %}

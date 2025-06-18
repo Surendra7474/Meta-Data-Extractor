@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}MetaXtract - Secure Metadata Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .text-mid-text {
+        color: var(--text-secondary) !important;
+    }
+
+    .stats-card {
+        background: linear-gradient(135deg, var(--card-bg), #2a2a2a);
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--card-shadow);
+        border: 1px solid rgba(0, 153, 255, 0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        border-color: rgba(0, 153, 255, 0.2);
+    }
+
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(0, 153, 255, 0.05), rgba(0, 153, 255, 0.02));
+        z-index: 0;
+    }
+
+    .stats-card-content {
+        position: relative;
+        z-index: 1;
+        padding: 25px;
+    }
+
+    .stats-value {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #ffffff, var(--accent-light));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .stats-label {
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+    }
+
+    .stats-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(0, 153, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-blue);
+        font-size: 24px;
+    }
+
+    .action-button {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 153, 255, 0.2);
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .action-button:hover {
+        background: rgba(0, 153, 255, 0.1);
+        transform: translateY(-3px);
+        color: var(--text-primary);
+    }
+
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: rgba(0, 153, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--accent-blue);
+        margin-bottom: 10px;
+    }
+
+    .action-title {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 5px;
+    }
+
+    .action-subtitle {
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+
+    .file-row:hover {
+        background-color: rgba(0, 153, 255, 0.05) !important;
+    }
+
+    .file-type-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        margin-right: 15px;
+        font-size: 18px;
+    }
+
+    .file-type-image {
+        background-color: rgba(0, 153, 255, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .file-type-pdf {
+        background-color: rgba(255, 58, 94, 0.1);
+        color: var(--danger-color);
+    }
+
+    .file-type-excel {
+        background-color: rgba(10, 207, 131, 0.1);
+        color: var(--success-color);
+    }
+
+    .file-type-document {
+        background-color: rgba(0, 133, 255, 0.1);
+        color: var(--accent-blue);
+    }
+
+    .file-type-other {
+        background-color: rgba(176, 176, 176, 0.1);
+        color: var(--text-secondary);
+    }
+
+    .file-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .file-name {
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+
+    .file-meta {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .code-block {
+        background-color: var(--card-bg-darker);
+        border-radius: 10px;
+        padding: 15px;
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        border: 1px solid var(--border-color);
+        position: relative;
+    }
+
+    /* Table styling overrides for dark theme */
+    .table {
+        color: var(--text-primary) !important;
+        background-color: transparent !important;
+    }
+
+    .table thead th {
+        color: var(--text-secondary) !important;
+        border-color: var(--border-color) !important;
+        background-color: var(--card-bg-darker) !important;
+        padding: 12px 16px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+
+    .table th,
+    .table td {
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+        background-color: transparent !important;
+        padding: 12px 16px;
+    }
+
+    .badge {
+        padding: 0.4em 0.6em;
+        font-weight: 500;
+        border-radius: 6px;
+        font-size: 0.75rem;
+    }
+
+    .badge-primary {
+        background-color: rgba(0, 153, 255, 0.15);
+        color: var(--accent-blue);
+    }
+
+    /* Custom scrollbar for the file list */
+    .files-table-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border-radius: 16px;
+        position: relative;
+    }
+
+    .files-table-container thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .files-table-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .files-table-container::-webkit-scrollbar-track {
+        background: var(--card-bg-darker);
+        border-radius: 4px;
+    }
+
+    .files-table-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 153, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    .files-table-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 153, 255, 0.4);
+    }
+
+    .card-footer {
+        background-color: var(--card-bg-darker);
+        border-top: 1px solid var(--border-color);
+        border-radius: 0 0 16px 16px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center position-relative z-1">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Meta<span style="color: var(--accent-light);">Xtract</span> <br>Metadata Analyzer</h1>
+                <p class="lead mb-4">
+                    Uncover hidden information, detect steganography, and analyze file metadata with advanced security features.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('main.upload_file') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-upload me-2"></i> Upload File
+                    </a>
+                    <a href="{{ url_for('main.about') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-shield-alt me-2"></i> Security Features
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="position-relative mt-5 mt-lg-0">
+                    <div class="position-absolute" style="width: 300px; height: 300px; background-color: rgba(0, 153, 255, 0.05); border-radius: 24px; transform: rotate(15deg); top: -20px; right: 20px; z-index: 0;"></div>
+                    <div class="position-relative z-1 d-flex justify-content-center align-items-center">
+                        <div style="width: 350px; background-color: rgba(30, 30, 30, 0.4); border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);">
+                            <div style="background-color: rgba(255, 255, 255, 0.1); padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center;">
+                                    <i class="fas fa-shield-alt me-2 text-white"></i>
+                                    <span style="color: white; font-weight: 600;">Security Analysis</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-ellipsis-v text-white"></i>
+                                </div>
+                            </div>
+                            <div style="padding: 25px;">
+                                <div class="d-flex align-items-center mb-4">
+                                    <div style="width: 50px; height: 50px; background-color: rgba(0, 153, 255, 0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                                        <i class="fas fa-file-image text-white" style="font-size: 24px;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="color: white; font-weight: 700; font-size: 18px;">Steganography Scan</div>
+                                        <div style="color: rgba(255, 255, 255, 0.7); font-size: 14px;">Detecting hidden data</div>
+                                    </div>
+                                </div>
+                                <div style="height: 120px; background-color: rgba(0, 153, 255, 0.1); border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; padding: 15px; overflow: hidden; position: relative;">
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.5;">
+                                        <div style="position: absolute; width: 5px; height: 60%; background-color: rgba(0, 153, 255, 0.5); top: 20%; left: 10%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 40%; background-color: rgba(0, 153, 255, 0.5); top: 30%; left: 20%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 75%; background-color: rgba(0, 153, 255, 0.5); top: 12.5%; left: 30%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 55%; background-color: rgba(0, 153, 255, 0.5); top: 22.5%; left: 40%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 65%; background-color: rgba(0, 153, 255, 0.5); top: 17.5%; left: 50%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 45%; background-color: rgba(0, 153, 255, 0.5); top: 27.5%; left: 60%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 70%; background-color: rgba(0, 153, 255, 0.5); top: 15%; left: 70%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 50%; background-color: rgba(0, 153, 255, 0.5); top: 25%; left: 80%; border-radius: 3px;"></div>
+                                        <div style="position: absolute; width: 5px; height: 60%; background-color: rgba(0, 153, 255, 0.5); top: 20%; left: 90%; border-radius: 3px;"></div>
+                                    </div>
+                                    <div style="position: relative; z-index: 1; color: white; text-align: center;">
+                                        <div style="font-size: 14px; margin-bottom: 6px; opacity: 0.8;">LSB Analysis</div>
+                                        <div style="font-size: 22px; font-weight: 700;">92.4% Complete</div>
+                                    </div>
+                                </div>
+                                <div style="background-color: var(--accent-blue); color: white; border-radius: 10px; padding: 12px 20px; text-align: center; font-weight: 600;">
+                                    <i class="fas fa-check-circle me-2"></i> No Hidden Data Detected
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-4">
+    <!-- Stats Row -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-card-content">
+                    <div class="stats-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stats-label">Total Files</div>
+                    <div class="stats-value">{{ files_count|default(0) }}</div>
+                    <p class="mb-0 text-mid-text">Files analyzed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-card-content">
+                    <div class="stats-icon">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="stats-label">Images</div>
+                    <div class="stats-value">{{ images_count|default(0) }}</div>
+                    <p class="mb-0 text-mid-text">With EXIF data</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-card-content">
+                    <div class="stats-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="stats-label">Documents</div>
+                    <div class="stats-value">{{ docs_count|default(0) }}</div>
+                    <p class="mb-0 text-mid-text">PDFs and text files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-card-content">
+                    <div class="stats-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stats-label">Security Alerts</div>
+                    <div class="stats-value">{{ security_alerts|default(0) }}</div>
+                    <p class="mb-0 text-mid-text">Potential risks identified</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+        <div class="col-12 mb-4">
+            <h2 class="mb-0 fw-bold">Quick Actions</h2>
+            <p class="text-mid-text">Tools for analyzing and extracting metadata</p>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <a href="{{ url_for('main.upload_file') }}" class="action-button h-100">
+                <div class="action-icon">
+                    <i class="fas fa-upload"></i>
+                </div>
+                <div class="action-title">Upload File</div>
+                <div class="action-subtitle">Upload and analyze files for metadata and hidden information</div>
+            </a>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <a href="{{ url_for('main.file_list') }}" class="action-button h-100">
+                <div class="action-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="action-title">Browse Files</div>
+                <div class="action-subtitle">View all uploaded files and their extracted metadata</div>
+            </a>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <a href="{{ url_for('main.about') }}#api" class="action-button h-100">
+                <div class="action-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="action-title">API Access</div>
+                <div class="action-subtitle">Extract metadata programmatically through REST API</div>
+            </a>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <a href="{{ url_for('main.about') }}" class="action-button h-100">
+                <div class="action-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="action-title">Security Features</div>
+                <div class="action-subtitle">Learn about steganography detection and security analysis tools</div>
+            </a>
+        </div>
+    </div>
+
+    {% if recent_files %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0 fw-bold">Recent Files</h2>
+                    <p class="text-mid-text mb-0">Recent uploads and their analysis results</p>
+                </div>
+                <a href="{{ url_for('main.file_list') }}" class="btn btn-outline-primary">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card">
+                <div class="table-responsive files-table-container">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>FILE</th>
+                                <th>TYPE</th>
+                                <th>SIZE</th>
+                                <th>UPLOADED</th>
+                                <th class="text-end">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in recent_files %}
+                            <tr class="file-row">
+                                <td class="align-middle">
+                                    <div class="d-flex align-items-center">
+                                        <div class="file-type-icon
+                                            {% if file.mime_type.startswith('image/') %}
+                                            file-type-image
+                                            {% elif file.mime_type == 'application/pdf' %}
+                                            file-type-pdf
+                                            {% elif 'spreadsheet' in file.mime_type or file.file_extension in ['xlsx', 'xls', 'csv'] %}
+                                            file-type-excel
+                                            {% elif 'document' in file.mime_type or file.file_extension in ['docx', 'doc'] %}
+                                            file-type-document
+                                            {% else %}
+                                            file-type-other
+                                            {% endif %}
+                                        ">
+                                            {% if file.mime_type.startswith('image/') %}
+                                                <i class="fas fa-image"></i>
+                                            {% elif file.mime_type == 'application/pdf' %}
+                                                <i class="fas fa-file-pdf"></i>
+                                            {% elif 'spreadsheet' in file.mime_type or file.file_extension in ['xlsx', 'xls', 'csv'] %}
+                                                <i class="fas fa-file-excel"></i>
+                                            {% elif 'document' in file.mime_type or file.file_extension in ['docx', 'doc'] %}
+                                                <i class="fas fa-file-word"></i>
+                                            {% else %}
+                                                <i class="fas fa-file"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="file-info">
+                                            <span class="file-name">{{ file.original_filename }}</span>
+                                            <span class="file-meta">{{ file.mime_type }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge badge-primary">{{ file.file_extension.upper() }}</span>
+                                </td>
+                                <td class="align-middle text-mid-text">{{ (file.file_size / 1024)|round(1) }} KB</td>
+                                <td class="align-middle text-mid-text">{{ file.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="align-middle text-end">
+                                    <a href="{{ url_for('main.file_details', file_id=file.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-info-circle me-1"></i> Details
+                                    </a>
+                                    <a href="{{ url_for('main.download_file', file_id=file.id) }}" class="btn btn-sm btn-outline-light ms-1">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if files_count > 3 %}
+                <div class="card-footer text-center py-3">
+                    <p class="mb-0 text-mid-text">Showing 3 of {{ files_count }} files. <a href="{{ url_for('main.file_list') }}" class="text-primary">View all files</a></p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        <div style="width: 56px; height: 56px; border-radius: 12px; background-color: rgba(0, 153, 255, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 20px;">
+                            <i class="fas fa-code" style="color: var(--accent-blue); font-size: 24px;"></i>
+                        </div>
+                        <div>
+                            <h3 class="card-title mb-1">API Access</h3>
+                            <p class="card-text text-mid-text mb-0">
+                                Use our API to extract metadata programmatically
+                            </p>
+                        </div>
+                    </div>
+                    <div class="code-block mb-4">
+                        <code>curl -F "file=@path/to/your/file.jpg" http://localhost:5000/api/extract</code>
+                        <button class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 text-mid-text copy-code" data-code="curl -F &quot;file=@path/to/your/file.jpg&quot; http://localhost:5000/api/extract" style="background: transparent; border: none;">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="d-flex">
+                        <a href="{{ url_for('main.about') }}#api" class="btn btn-primary me-2">
+                            <i class="fas fa-book me-2"></i> API Documentation
+                        </a>
+                        <a href="/api/files" class="btn btn-outline-primary">
+                            <i class="fas fa-file-code me-2"></i> Files Endpoint
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Copy code functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButtons = document.querySelectorAll('.copy-code');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.dataset.code;
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalHTML = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        this.innerHTML = originalHTML;
+                    }, 2000);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
